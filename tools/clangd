@@ -7,7 +7,7 @@ import shutil
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-COMPILE_DB   = os.path.join(PROJECT_ROOT, 'build', 'compile_commands.json')
+COMPILE_DB   = os.path.join(PROJECT_ROOT, 'build', 'esp32s3', 'compile_commands.json')
 
 def compiler_from_compile_db():
     try:

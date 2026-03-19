@@ -1,33 +1,77 @@
-#include "esp_chip_info.h"
-#include "esp_flash.h"
-#include "esp_psram.h"
-#include "esp_mac.h"
+/*
+ * PaperS3 Triangle Demo
+ *
+ * Renders a filled triangle to the ED047TC2 960x540 e-ink display
+ * using epdiy v2 and the custom M5Stack PaperS3 board definition.
+ */
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 
-static const char *TAG = "main";
+#include "epdiy.h"
+#include <papers3/epd.h>
+
+static const char *TAG = "triangle_demo";
+
+/* Logical dimensions after 90° rotation */
+#define EPD_WIDTH  540
+#define EPD_HEIGHT 960
+
+/* Triangle vertices — apex at top centre, base at bottom (△) */
+#define APEX_X   (EPD_WIDTH  / 2)   /* 270 — top centre   */
+#define APEX_Y   80
+#define BASE_LX  60
+#define BASE_LY  (EPD_HEIGHT - 80)  /* 880 — bottom left  */
+#define BASE_RX  (EPD_WIDTH  - 60)  /* 480 — bottom right */
+#define BASE_RY  (EPD_HEIGHT - 80)  /* 880                */
+
+static EpdiyHighlevelState hl;
 
 void app_main(void)
 {
-    esp_chip_info_t chip;
-    esp_chip_info(&chip);
+    ESP_LOGI(TAG, "PaperS3 triangle demo starting");
 
-    uint32_t flash_size = 0;
-    esp_flash_get_size(NULL, &flash_size);
+    /* ── 1. Init: board + display + LUT in one call ──────────────── */
+    epd_init(&epd_board_papers3, &ED047TC2, EPD_LUT_64K);
+	epd_set_rotation(EPD_ROT_INVERTED_PORTRAIT);
 
-    uint8_t mac[6];
-    esp_efuse_mac_get_default(mac);
+    /* ── 2. Allocate framebuffer in PSRAM ────────────────────────── */
+    hl = epd_hl_init(EPD_BUILTIN_WAVEFORM);
 
-    ESP_LOGI(TAG, "╔══════════════════════════════╗");
-    ESP_LOGI(TAG, "║        PaperS3 Boot          ║");
-    ESP_LOGI(TAG, "╚══════════════════════════════╝");
-    ESP_LOGI(TAG, "Chip:    ESP32-S3 rev %d", chip.revision);
-    ESP_LOGI(TAG, "Cores:   %d", chip.cores);
-    ESP_LOGI(TAG, "Flash:   %"PRIu32" MB", flash_size / (1024 * 1024));
-    ESP_LOGI(TAG, "PSRAM:   %zu MB", esp_psram_get_size() / (1024 * 1024));
-    ESP_LOGI(TAG, "MAC:     %02X:%02X:%02X:%02X:%02X:%02X",
-             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    ESP_LOGI(TAG, "Features:%s%s%s",
-             (chip.features & CHIP_FEATURE_WIFI_BGN) ? " WiFi"  : "",
-             (chip.features & CHIP_FEATURE_BT)       ? " BT"    : "",
-             (chip.features & CHIP_FEATURE_BLE)      ? " BLE"   : "");
+    uint8_t *fb = epd_hl_get_framebuffer(&hl);
+    if (fb == NULL) {
+        ESP_LOGE(TAG, "Framebuffer allocation failed — is PSRAM enabled?");
+        return;
+    }
+
+    /* ── 3. Power on and clear the panel ─────────────────────────── */
+    epd_poweron();
+    epd_clear();
+    epd_poweroff();
+
+    /* ── 4. Draw triangle into the framebuffer ───────────────────── */
+    epd_hl_set_all_white(&hl);
+
+    epd_fill_triangle(
+        APEX_X,  APEX_Y,   /* top centre  */
+        BASE_LX, BASE_LY,  /* bottom left */
+        BASE_RX, BASE_RY,  /* bottom right */
+        0x00,              /* black */
+        fb
+    );
+
+    /* ── 5. Push framebuffer to the panel ────────────────────────── */
+    epd_poweron();
+
+    enum EpdDrawError err = epd_hl_update_screen(&hl, MODE_GL16, 25);
+    if (err != EPD_DRAW_SUCCESS) {
+        ESP_LOGE(TAG, "Screen update failed: %d", (int)err);
+    } else {
+        ESP_LOGI(TAG, "Triangle drawn successfully");
+    }
+
+    epd_poweroff();
+
+    ESP_LOGI(TAG, "Done — image retained on display");
 }

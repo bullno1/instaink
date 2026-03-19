@@ -1,6 +1,5 @@
+targets:
+  - esp32s3
+  - linux
 dependencies:
   idf: ">=5.1.0"
-
-  epdiy:
-    git: "https://github.com/vroland/epdiy.git"
-    version: "*"

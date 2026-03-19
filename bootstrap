@@ -1,5 +1,5 @@
 #!/bin/sh -e
 
-. ./activate.sh
-
-idf.py update-dependencies
+git submodule sync
+git submodule update --init
+./idf update-dependencies

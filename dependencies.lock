@@ -1,5 +1,9 @@
 dependencies:
-  epdiy:
+  idf:
+    source:
+      type: idf
+    version: 5.5.3
+  vroland/epdiy:
     component_hash: bdacd89d4a9209e3e40b08ef22e23b9b7a385d9326496a68aec295959318334d
     dependencies: []
     source:
@@ -7,13 +11,9 @@ dependencies:
       path: .
       type: git
     version: 4ede9eb2d8a669b19a84cba916f154e1a45507fe
-  idf:
-    source:
-      type: idf
-    version: 5.5.3
 direct_dependencies:
-- epdiy
 - idf
-manifest_hash: 49e795df6310d609944715d34cd6f7e716081721566d71e751c64d2d087a99d7
+- vroland/epdiy
+manifest_hash: d3af3ec6189b1003c8c1a272bf277d46ccaf7da4386763a90c51f0227b61f5f6
 target: esp32s3
 version: 2.0.0

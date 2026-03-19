@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+. ./activate.sh
+export IDF_TARGET=${IDF_TARGET:-esp32s3}
+exec idf.py -B build/$IDF_TARGET $@
