@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+import shutil
+
+SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+COMPILE_DB   = os.path.join(PROJECT_ROOT, 'build', 'compile_commands.json')
+
+def compiler_from_compile_db():
+    try:
+        with open(COMPILE_DB) as f:
+            db = json.load(f)
+        if not db:
+            return None
+        compiler = db[0]['command'].split()[0]
+        if os.path.isfile(compiler):
+            return compiler
+        print(f"clangd-wrapper: compiler not found at: {compiler}", file=sys.stderr)
+    except FileNotFoundError:
+        print(f"clangd-wrapper: compile_commands.json not found at: {COMPILE_DB}",
+              file=sys.stderr)
+    except (json.JSONDecodeError, KeyError, IndexError, OSError) as e:
+        print(f"clangd-wrapper: failed to parse compile_commands.json: {e}",
+              file=sys.stderr)
+    return None
+
+def main():
+    clangd = shutil.which('clangd')
+    if not clangd:
+        print("clangd-wrapper: clangd not found in PATH", file=sys.stderr)
+        sys.exit(1)
+
+    compiler = compiler_from_compile_db()
+
+    cmd = [clangd]
+    if compiler:
+        cmd.append(f'--query-driver={compiler}')
+    else:
+        print("clangd-wrapper: starting clangd without --query-driver",
+              file=sys.stderr)
+
+    cmd.extend(sys.argv[1:])
+    os.execv(clangd, cmd)
+
+if __name__ == '__main__':
+    main()

@@ -2,6 +2,4 @@
 
 . ./activate.sh
 
-idf.py --build-dir=build-esp32 update-dependencies
-COMPILER=$(cat build/compile_command.json | jq -r '.[0].command' | cut -d' ' -f1)
-echo $COMPILER
+idf.py update-dependencies

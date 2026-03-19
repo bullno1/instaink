@@ -1,0 +1,9 @@
+---
+CompileFlags:
+  CompilationDatabase: build
+  Remove:
+   - -mlongcalls
+   - -mdisable-hardware-atomics
+   - -fno-shrink-wrap
+   - -fstrict-volatile-bitfields
+   - -fno-tree-switch-conversion
