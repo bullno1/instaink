@@ -13,6 +13,7 @@
 #include <papers3.h>
 #include <papers3/bmi270.h>
 #include <papers3/epd.h>
+#include <papers3/gt911.h>
 
 static const char *TAG = "triangle_demo";
 
@@ -30,6 +31,14 @@ static const char *TAG = "triangle_demo";
 
 static EpdiyHighlevelState hl;
 
+static void on_touch(const gt911_touch_t *touch, void *user_data)
+{
+	ESP_LOGI(TAG, "Touches:");
+	for (int i = 0; i < touch->count; ++i) {
+		ESP_LOGI(TAG, "%d: %d %d %d", touch->points[i].id, touch->points[i].x, touch->points[i].y, touch->points[i].size);
+	}
+}
+
 void app_main(void)
 {
     ESP_LOGI(TAG, "PaperS3 triangle demo starting");
@@ -37,6 +46,7 @@ void app_main(void)
     /* ── 1. Init: board + display + LUT in one call ──────────────── */
 	papers3_init();
 	bmi270_init();
+	gt911_init(on_touch, NULL);
     epd_init(&epd_board_papers3, &ED047TC2, EPD_LUT_64K);
 	epd_set_rotation(EPD_ROT_INVERTED_PORTRAIT);
 
