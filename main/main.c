@@ -4,6 +4,7 @@
 #include "draw.h"
 
 static const char *TAG = "app";
+static hal_fb_t fb;
 
 static const char *touch_type_str(hal_touch_type_t type)
 {
@@ -24,6 +25,22 @@ static void on_touch(const hal_touch_event_t *event, void *user_data)
              event->x,
              event->y,
              event->size);
+
+	if (event->type == HAL_TOUCH_DOWN) {
+		draw_line(
+			fb,
+			event->x, event->y - event->size,
+			event->x, event->y + event->size,
+			0x00
+		);
+		draw_line(
+			fb,
+			event->x - event->size, event->y,
+			event->x + event->size, event->y,
+			0x00
+		);
+		hal_display_blit(HAL_BLIT_FAST);
+	}
 }
 
 void app_main(void)
@@ -33,10 +50,10 @@ void app_main(void)
 
 	hal_display_clear();
 
-    hal_fb_t fb = hal_display_get_fb();
+    fb = hal_display_get_fb();
 	ESP_LOGI(TAG, "Device resolution = %d x %d", fb.width, fb.height);
 
     draw_line(fb, 0, 0, fb.width - 1, fb.height - 1, 0x00);
 
-    hal_display_blit(HAL_BLIT_FULL);
+    hal_display_blit(HAL_BLIT_FAST);
 }

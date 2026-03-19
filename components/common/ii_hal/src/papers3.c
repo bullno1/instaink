@@ -47,8 +47,8 @@ static void y8_to_epdiy(const uint8_t *src, uint8_t *dst)
 {
     for (int py = 0; py < HAL_WIDTH; py++) {
         for (int px = 0; px < HAL_HEIGHT; px += 2) {
-            uint8_t hi = src[(HAL_HEIGHT - 1 - px    ) * HAL_WIDTH + py] >> 4;
-            uint8_t lo = src[(HAL_HEIGHT - 1 - px - 1) * HAL_WIDTH + py] >> 4;
+            uint8_t hi = src[px       * HAL_WIDTH + (HAL_WIDTH - 1 - py)] >> 4;
+            uint8_t lo = src[(px + 1) * HAL_WIDTH + (HAL_WIDTH - 1 - py)] >> 4;
 
             dst[py * (HAL_HEIGHT / 2) + px / 2] = (hi << 4) | lo;
         }
@@ -158,7 +158,7 @@ void hal_display_blit(hal_blit_mode_t mode)
     float temp = 25.0f;
     bmi270_get_temperature(&temp);
 
-    enum EpdDrawMode draw_mode = (mode == HAL_BLIT_FULL) ? MODE_GC16 : MODE_GL16_FAST;
+    enum EpdDrawMode draw_mode = (mode == HAL_BLIT_FULL) ? MODE_GC16 : MODE_GL16;
 
     epd_poweron();
     enum EpdDrawError err = epd_hl_update_screen(&s_epd_hl, draw_mode, (int)temp);
