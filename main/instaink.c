@@ -14,6 +14,7 @@
 #include <papers3/bmi270.h>
 #include <papers3/epd.h>
 #include <papers3/gt911.h>
+#include <papers3/touch_processor.h>
 
 static const char *TAG = "triangle_demo";
 
@@ -30,13 +31,26 @@ static const char *TAG = "triangle_demo";
 #define BASE_RY  (EPD_HEIGHT - 80)  /* 880                */
 
 static EpdiyHighlevelState hl;
+static touch_processor_t touch_processor;
 
-static void on_touch(const gt911_touch_t *touch, void *user_data)
+static void on_raw_touch(const gt911_state_t *state, void *user_data)
 {
-	ESP_LOGI(TAG, "Touches:");
-	for (int i = 0; i < touch->count; ++i) {
-		ESP_LOGI(TAG, "%d: %d %d %d", touch->points[i].id, touch->points[i].x, touch->points[i].y, touch->points[i].size);
-	}
+	touch_processor_update(user_data, state);
+}
+
+static void on_touch_event(const touch_event_t *event, void *user_data)
+{
+    switch (event->type) {
+        case TOUCH_DOWN:
+            ESP_LOGI(TAG, "down (%d)  x=%d y=%d", event->id, event->x, event->y);
+            break;
+        case TOUCH_UP:
+            ESP_LOGI(TAG, "up (%d)   x=%d y=%d", event->id, event->x, event->y);
+            break;
+        case TOUCH_MOVE:
+            ESP_LOGI(TAG, "move (%d)  x=%d y=%d", event->id, event->x, event->y);
+            break;
+    }
 }
 
 void app_main(void)
@@ -46,7 +60,8 @@ void app_main(void)
     /* ── 1. Init: board + display + LUT in one call ──────────────── */
 	papers3_init();
 	bmi270_init();
-	gt911_init(on_touch, NULL);
+	touch_processor_init(&touch_processor, on_touch_event, NULL);
+	gt911_init(on_raw_touch, &touch_processor);
     epd_init(&epd_board_papers3, &ED047TC2, EPD_LUT_64K);
 	epd_set_rotation(EPD_ROT_INVERTED_PORTRAIT);
 

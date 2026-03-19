@@ -24,13 +24,13 @@ typedef struct {
 typedef struct {
     uint8_t       count;
     gt911_point_t points[GT911_MAX_POINTS];
-} gt911_touch_t;
+} gt911_state_t;
 
 /**
  * Callback invoked from the touch task when new touch data is ready.
  * Runs in its own task context — safe to call gt911_read() from here.
  */
-typedef void (*gt911_touch_cb_t)(const gt911_touch_t *touch, void *user_data);
+typedef void (*gt911_touch_cb_t)(const gt911_state_t *state, void *user_data);
 
 /**
  * Initialise the GT911 and install the INT pin interrupt.
@@ -43,6 +43,6 @@ esp_err_t gt911_init(gt911_touch_cb_t touch_cb, void *user_data);
  * Read current touch state.
  * Normally called from within the touch_cb — clears the INT pin.
  */
-esp_err_t gt911_read(gt911_touch_t *out_touch);
+esp_err_t gt911_read(gt911_state_t *out_touch);
 
 #endif

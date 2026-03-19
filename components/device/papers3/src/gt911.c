@@ -89,7 +89,7 @@ static void IRAM_ATTR gt911_isr_handler(void *arg)
 
 static void gt911_touch_task(void *arg)
 {
-    gt911_touch_t touch;
+    gt911_state_t touch;
 
     while (1) {
         xSemaphoreTake(s_touch_sem, portMAX_DELAY);
@@ -138,7 +138,7 @@ esp_err_t gt911_init(gt911_touch_cb_t touch_cb, void *user_data)
     return ESP_OK;
 }
 
-esp_err_t gt911_read(gt911_touch_t *out_touch)
+esp_err_t gt911_read(gt911_state_t *out_touch)
 {
     if (out_touch == NULL) return ESP_ERR_INVALID_ARG;
 
