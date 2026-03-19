@@ -10,6 +10,8 @@
 #include "esp_log.h"
 
 #include "epdiy.h"
+#include <papers3.h>
+#include <papers3/bmi270.h>
 #include <papers3/epd.h>
 
 static const char *TAG = "triangle_demo";
@@ -33,6 +35,8 @@ void app_main(void)
     ESP_LOGI(TAG, "PaperS3 triangle demo starting");
 
     /* ── 1. Init: board + display + LUT in one call ──────────────── */
+	papers3_init();
+	bmi270_init();
     epd_init(&epd_board_papers3, &ED047TC2, EPD_LUT_64K);
 	epd_set_rotation(EPD_ROT_INVERTED_PORTRAIT);
 
@@ -62,9 +66,12 @@ void app_main(void)
     );
 
     /* ── 5. Push framebuffer to the panel ────────────────────────── */
+	float temp = 25.f;
+	bmi270_get_temperature(&temp);
+    ESP_LOGI(TAG, "Temperature = %f", temp);
     epd_poweron();
 
-    enum EpdDrawError err = epd_hl_update_screen(&hl, MODE_GL16, 25);
+    enum EpdDrawError err = epd_hl_update_screen(&hl, MODE_GL16, temp);
     if (err != EPD_DRAW_SUCCESS) {
         ESP_LOGE(TAG, "Screen update failed: %d", (int)err);
     } else {
