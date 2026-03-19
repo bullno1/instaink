@@ -14,6 +14,6 @@ dependencies:
 direct_dependencies:
 - idf
 - vroland/epdiy
-manifest_hash: d3af3ec6189b1003c8c1a272bf277d46ccaf7da4386763a90c51f0227b61f5f6
+manifest_hash: 906bcf17f563750106a3832448f48a3a5882b82d660fc3e47f9c5b74edb6e173
 target: esp32s3
 version: 2.0.0

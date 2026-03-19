@@ -31,7 +31,7 @@ esp_err_t papers3_init(void)
     return ESP_OK;
 }
 
-esp_err_t papers3_release(void)
+esp_err_t papers3_deinit(void)
 {
     if (!s_installed) {
         return ESP_OK;

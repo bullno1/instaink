@@ -1,0 +1,5 @@
+dependencies:
+  vroland/epdiy:
+    git: "https://github.com/vroland/epdiy.git"
+    rules:
+      - if: "target == esp32s3"
