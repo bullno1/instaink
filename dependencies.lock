@@ -1,4 +1,14 @@
 dependencies:
+  espressif/freetype:
+    component_hash: a4169cdd22b3572342b2d640d7082405b8895e3214539283601c03412589b65d
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.4'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 2.14.2
   idf:
     source:
       type: idf
@@ -12,8 +22,9 @@ dependencies:
       type: git
     version: 4ede9eb2d8a669b19a84cba916f154e1a45507fe
 direct_dependencies:
+- espressif/freetype
 - idf
 - vroland/epdiy
-manifest_hash: 906bcf17f563750106a3832448f48a3a5882b82d660fc3e47f9c5b74edb6e173
+manifest_hash: 3250f1afb2f35436a61a3e07381ae299b9b1a476177d4c81cca24ee2a7ea7b74
 target: esp32s3
 version: 2.0.0

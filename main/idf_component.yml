@@ -1,5 +1,6 @@
 targets:
-  - esp32s3
-  - linux
+- esp32s3
+- linux
 dependencies:
-  idf: ">=5.1.0"
+  idf: '>=5.1.0'
+  espressif/freetype: ^2.14.2
