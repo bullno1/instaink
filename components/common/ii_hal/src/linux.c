@@ -261,7 +261,7 @@ static void cb_event(const sapp_event *e)
      */
     hal_touch_event_t te = {
         .id   = 0,
-        .size = 1,
+        .size = 12,
         .x    = (uint16_t)e->mouse_x,
         .y    = (uint16_t)e->mouse_y,
     };
