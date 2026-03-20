@@ -61,11 +61,11 @@ static void papers3_init(uint32_t epd_row_width)
     gpio_set_level(EPD_BST, 0);
 
     const LcdEpdConfig_t cfg = {
-        .pixel_clock      = 12000000,  /* 12 MHz (reduced to 6/3 if cache line <64B) */
-        .ckv_high_time    = 70,        /* 70 * 1/10µs = 7µs CKV high time            */
+        .pixel_clock      = 20000000,  // Taken from `EpdDisplay_t ED047TC2` display definition
+        .ckv_high_time    = 70,
         .line_front_porch = 4,
         .le_high_time     = 4,
-        .bus_width        = 8,         /* 8-bit parallel bus                          */
+        .bus_width        = 8,
 
         .bus = {
             .data = {
