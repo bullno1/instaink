@@ -107,7 +107,7 @@ static void papers3_poweron(epd_ctrl_state_t *state)
 static void papers3_poweroff(epd_ctrl_state_t *state)
 {
     gpio_set_level(EPD_BST, 0);
-    vTaskDelay(pdMS_TO_TICKS(1));
+    vTaskDelay(pdMS_TO_TICKS(500));
     gpio_set_level(EPD_PWR, 0);
     ESP_LOGI(TAG, "EPD power OFF");
 }
