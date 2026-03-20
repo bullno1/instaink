@@ -47,8 +47,8 @@ static void y8_to_epdiy(const uint8_t *src, uint8_t *dst)
 {
     for (int py = 0; py < HAL_WIDTH; py++) {
         for (int px = 0; px < HAL_HEIGHT; px += 2) {
-            uint8_t hi = src[px       * HAL_WIDTH + (HAL_WIDTH - 1 - py)] >> 4;
-            uint8_t lo = src[(px + 1) * HAL_WIDTH + (HAL_WIDTH - 1 - py)] >> 4;
+            uint8_t hi = src[(px + 1) * HAL_WIDTH + (HAL_WIDTH - 1 - py)] >> 4;
+            uint8_t lo = src[px       * HAL_WIDTH + (HAL_WIDTH - 1 - py)] >> 4;
 
             dst[py * (HAL_HEIGHT / 2) + px / 2] = (hi << 4) | lo;
         }
