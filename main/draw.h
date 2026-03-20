@@ -41,20 +41,18 @@ void draw_line(hal_fb_t fb,
                int x1, int y1,
                uint8_t colour);
 
-/**
- * @brief Draw the outline of an axis-aligned rectangle.
- *
- * @param fb     Framebuffer to draw into.
- * @param x      Left edge X coordinate.
- * @param y      Top edge Y coordinate.
- * @param w      Width  in pixels.
- * @param h      Height in pixels.
- * @param colour Pixel value (0 = black … 255 = white).
- */
 void draw_rect(hal_fb_t fb,
                int x, int y,
                int w, int h,
+               int thickness,
                uint8_t colour);
+
+void draw_rect_filled(hal_fb_t fb,
+                      int x, int y,
+                      int w, int h,
+                      uint8_t colour);
+
+void draw_clear(hal_fb_t fb, uint8_t color);
 
 #ifdef __cplusplus
 }

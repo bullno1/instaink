@@ -452,6 +452,7 @@ txt_draw_result_t txt_draw(txt_renderer_t   *renderer,
      * args->text + result.num_chars_drawn.
      */
     res.num_chars_drawn = (size_t)(resume - args->text);
+	res.y_offset = (uint16_t)ascender;
 
     if (rendered_any) {
         res.width  = (max_pen_x > box_left)

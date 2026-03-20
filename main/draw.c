@@ -1,9 +1,5 @@
-/**
- * @file draw.c
- * @brief Basic drawing primitives over a HAL framebuffer.
- */
-
 #include "draw.h"
+#include <string.h>
 
 /* Absolute value without pulling in math.h */
 #define ABS(x) ((x) < 0 ? -(x) : (x))
@@ -40,10 +36,29 @@ void draw_line(hal_fb_t fb,
 void draw_rect(hal_fb_t fb,
                int x, int y,
                int w, int h,
+			   int thickness,
                uint8_t colour)
 {
-    draw_line(fb, x,         y,         x + w - 1, y,         colour); /* top    */
-    draw_line(fb, x,         y + h - 1, x + w - 1, y + h - 1, colour); /* bottom */
-    draw_line(fb, x,         y,         x,         y + h - 1, colour); /* left   */
-    draw_line(fb, x + w - 1, y,         x + w - 1, y + h - 1, colour); /* right  */
+    for (int i = 0; i < thickness; i++) {
+        int d = i - (thickness - 1) / 2;
+        draw_line(fb, x - d,         y - d,         x + w - 1 + d, y - d,         colour); /* top    */
+        draw_line(fb, x - d,         y + h - 1 + d, x + w - 1 + d, y + h - 1 + d, colour); /* bottom */
+        draw_line(fb, x - d,         y - d,         x - d,         y + h - 1 + d, colour); /* left   */
+        draw_line(fb, x + w - 1 + d, y - d,         x + w - 1 + d, y + h - 1 + d, colour); /* right  */
+    }
+}
+
+void draw_rect_filled(hal_fb_t fb,
+                      int x, int y,
+                      int w, int h,
+                      uint8_t colour)
+{
+    for (int row = y; row < y + h; row++) {
+        draw_line(fb, x, row, x + w - 1, row, colour);
+    }
+}
+
+void draw_clear(hal_fb_t fb, uint8_t color)
+{
+	memset(fb.pixels, color, fb.width * fb.height);
 }

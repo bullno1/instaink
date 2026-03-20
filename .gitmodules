@@ -1,3 +1,6 @@
 [submodule "components/common/sokol"]
 	path = components/common/ii_hal/src/sokol
 	url = https://github.com/floooh/sokol.git
+[submodule "components/common/clay/clay"]
+	path = components/common/clay/clay
+	url = https://github.com/nicbarker/clay.git

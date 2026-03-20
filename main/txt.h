@@ -201,6 +201,20 @@ typedef struct {
     uint16_t  height;
 
     /**
+     * @brief Distance from args->y (baseline) to the top of the bounding box.
+     *
+     * Equal to the font's ascender. Always positive.
+     *
+     * A layout library that works in bounding-box coordinates can recover
+     * the correct baseline position as:
+     *
+     *   baseline_y = box_y + result.y_offset;
+     *
+     * and then pass that as args->y in the render call.
+     */
+    uint16_t y_offset;
+
+    /**
      * @brief Number of UTF-8 characters (codepoints) actually rendered.
      *
      * May be less than strlen(text) when max_width / max_height caused
