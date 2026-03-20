@@ -1,4 +1,9 @@
 idf_component_register(
-	SRCS "main.c" "draw.c"
+	SRCS
+		"main.c"
+		"draw.c"
+		"txt.c"
 	REQUIRES "ii_hal"
+	EMBED_FILES
+		"assets/CourierPrime-Bold.ttf"
 )
