@@ -59,6 +59,7 @@ extern const uint8_t ui_font_end[]     asm("_binary_CourierPrime_Bold_ttf_end");
 static const char *TAG = "app";
 static void* clay_mem = NULL;
 static hal_fb_t fb;
+static hal_fb_t last_fb;
 static QueueHandle_t ui_queue;
 static txt_renderer_t* txt_renderer;
 static txt_font_t* fnt_label;
@@ -174,7 +175,7 @@ static bool poll_message(ui_msg_t* msg, bool* first_message) {
 		*first_message = false;
 		return true;
 	} else {
-		return xQueueReceive(ui_queue, msg, portTICK_PERIOD_MS / 2) == pdPASS;
+		return xQueueReceive(ui_queue, msg, pdMS_TO_TICKS(10)) == pdPASS;
 	}
 }
 
@@ -385,7 +386,10 @@ static void render_task(void* arg)
 			}
 		}
 
-		hal_display_blit(HAL_BLIT_FAST);
+		if (memcmp(last_fb.pixels, fb.pixels, fb.width * fb.height)) {
+			memcpy(last_fb.pixels, fb.pixels, fb.width * fb.height);
+			hal_display_blit(HAL_BLIT_FAST);
+		}
 
 		// Drain the event queue
 		bool first_message = true;
@@ -423,6 +427,10 @@ void app_main(void)
 
     fb = hal_display_get_fb();
 	ESP_LOGI(TAG, "Device resolution = %d x %d", fb.width, fb.height);
+	last_fb.width = fb.width;
+	last_fb.height = fb.height;
+	last_fb.pixels = malloc(fb.width * fb.height);
+	memcpy(last_fb.pixels, fb.pixels, fb.width * fb.height);
 
 	if (clay_mem == NULL) {
 		Clay_SetMaxElementCount(512);

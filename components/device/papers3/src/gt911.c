@@ -91,6 +91,8 @@ static void gt911_touch_task(void *arg)
 
     while (1) {
         xSemaphoreTake(s_touch_sem, portMAX_DELAY);
+        while (xSemaphoreTake(s_touch_sem, pdMS_TO_TICKS(10)) == pdTRUE) {
+		}
 
         if (gt911_read(&touch) == ESP_OK && s_touch_cb != NULL) {
             s_touch_cb(&touch, s_user_data);
