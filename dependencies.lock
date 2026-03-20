@@ -14,13 +14,13 @@ dependencies:
       type: idf
     version: 5.5.3
   vroland/epdiy:
-    component_hash: bdacd89d4a9209e3e40b08ef22e23b9b7a385d9326496a68aec295959318334d
+    component_hash: ed5a8d5162ee6f16be5b4f5877926edcdfa9c3f34436ac30bf06d0a3e710da56
     dependencies: []
     source:
       git: https://github.com/vroland/epdiy.git
       path: .
       type: git
-    version: 4ede9eb2d8a669b19a84cba916f154e1a45507fe
+    version: bdce28d6813b0e57f775192333f370b3c5ab675b
 direct_dependencies:
 - espressif/freetype
 - idf

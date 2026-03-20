@@ -62,6 +62,7 @@ static hal_fb_t fb;
 static QueueHandle_t ui_queue;
 static txt_renderer_t* txt_renderer;
 static txt_font_t* fnt_label;
+static txt_font_t* fnt_label_jumbo;
 
 static const char *touch_type_str(hal_touch_type_t type)
 {
@@ -80,19 +81,6 @@ static void on_touch(const hal_touch_event_t *event, void *user_data)
 		.touch = *event,
 	};
 	xQueueSend(ui_queue, &msg, 0);
-}
-
-static void handle_ui_msg(ui_msg_t* msg)
-{
-	if (msg->type == UI_TOUCH_EVENT) {
-		Clay_SetPointerState(
-			(Clay_Vector2){
-				.x = msg->touch.x,
-				.y = msg->touch.y,
-			},
-			msg->touch.type != HAL_TOUCH_UP
-		);
-	}
 }
 
 static inline uint8_t
@@ -125,7 +113,7 @@ render_text(void* ctx, const Clay_RenderCommand* command) {
 
 	txt_draw_t draw_args = render_ctx->config.txt;
 	draw_args.x = command->boundingBox.x;
-	draw_args.y = command->boundingBox.y;
+	draw_args.y = command->boundingBox.y + render_ctx->y_offset;
 	draw_args.max_width = command->boundingBox.width;
 	draw_args.max_height = command->boundingBox.height;
 	draw_args.output = fb;
@@ -173,12 +161,33 @@ text(Clay_ElementId id, const txt_config_t* config) {
 	}
 }
 
+static void filler(Clay_ElementId id) {
+	CLAY(id, {
+		.layout.sizing = { CLAY_SIZING_GROW(0), CLAY_SIZING_GROW(0)},
+	}) {
+	}
+}
+
+static bool poll_message(ui_msg_t* msg, bool* first_message) {
+	if (*first_message) {
+		xQueueReceive(ui_queue, msg, portMAX_DELAY);
+		*first_message = false;
+		return true;
+	} else {
+		return xQueueReceive(ui_queue, msg, portTICK_PERIOD_MS / 2) == pdPASS;
+	}
+}
+
 static void render_task(void* arg)
 {
 	hal_input_set_callback(on_touch, NULL);
 
 	txt_renderer = txt_renderer_create();
-	fnt_label = txt_font_load(txt_renderer, ui_font_start, ui_font_end - ui_font_start, 30);
+	fnt_label = txt_font_load(txt_renderer, ui_font_start, ui_font_end - ui_font_start, 28);
+	fnt_label_jumbo = txt_font_load(txt_renderer, ui_font_start, ui_font_end - ui_font_start, 90);
+
+	int counter = 0;
+	bool just_pressed = false;
 
 	while (true) {
 		// Flip arena
@@ -201,20 +210,105 @@ static void render_task(void* arg)
 							.width = CLAY_SIZING_GROW(0),
 							.height = CLAY_SIZING_FIT(0),
 						},
-						.childAlignment.x = CLAY_ALIGN_X_CENTER,
+						.childAlignment = {
+							.x = CLAY_ALIGN_X_CENTER,
+							.y = CLAY_ALIGN_Y_CENTER,
+						},
 					},
 					.border = { .width = CLAY_BORDER_ALL(4) },
 				}) {
-					CLAY(CLAY_ID("Title"), {
+					filler(CLAY_ID_LOCAL("Filler1"));
+					CLAY(CLAY_ID("MinusBtn"), {
+						.layout = {
+							.sizing = {
+								.width = CLAY_SIZING_FIT(0),
+								.height = CLAY_SIZING_FIT(0)
+							},
+							.childAlignment = {
+								.x = CLAY_ALIGN_X_CENTER,
+								.y = CLAY_ALIGN_Y_CENTER,
+							},
+						},
+					}) {
+						text(CLAY_ID("MinusText"), &(txt_config_t){
+							.sizing = TEXT_SIZING_GROW,
+							.txt = {
+								.text = "-",
+								.max_width = TXT_SIZE_UNLIMITED,
+								.max_height = TXT_SIZE_UNLIMITED,
+								.style = {
+									.font = fnt_label_jumbo,
+									.fg = 0,
+								},
+							},
+						});
+
+						if (Clay_Hovered() && just_pressed) {
+							--counter;
+						}
+					}
+					filler(CLAY_ID_LOCAL("Filler2"));
+
+					CLAY(CLAY_ID("Counter"), {
 						.layout = {
 							.sizing = {
 								.width = CLAY_SIZING_FIXED(200),
 								.height = CLAY_SIZING_FIXED(200)
 							},
+							.childAlignment = {
+								.x = CLAY_ALIGN_X_CENTER,
+								.y = CLAY_ALIGN_Y_CENTER,
+							},
 						},
-						.backgroundColor = (Clay_Color){ .a = 1.f },
+						.border = { .width = CLAY_BORDER_ALL(1) },
 					}) {
+						static char fmt_buf[64];  // TODO: use arena
+						snprintf(fmt_buf, sizeof(fmt_buf), "%d", counter);
+						text(CLAY_ID("CounterText"), &(txt_config_t){
+							.sizing = TEXT_SIZING_GROW,
+							.txt = {
+								.text = fmt_buf,
+								.max_width = TXT_SIZE_UNLIMITED,
+								.max_height = TXT_SIZE_UNLIMITED,
+								.style = {
+									.font = fnt_label_jumbo,
+									.fg = 0,
+								},
+							},
+						});
 					}
+
+					filler(CLAY_ID_LOCAL("Filler3"));
+					CLAY(CLAY_ID("PlusBtn"), {
+						.layout = {
+							.sizing = {
+								.width = CLAY_SIZING_FIT(0),
+								.height = CLAY_SIZING_FIT(0)
+							},
+							.childAlignment = {
+								.x = CLAY_ALIGN_X_CENTER,
+								.y = CLAY_ALIGN_Y_CENTER,
+							},
+						},
+					}) {
+						text(CLAY_ID("PlusText"), &(txt_config_t){
+							.sizing = TEXT_SIZING_GROW,
+							.txt = {
+								.text = "+",
+								.max_width = TXT_SIZE_UNLIMITED,
+								.max_height = TXT_SIZE_UNLIMITED,
+								.style = {
+									.font = fnt_label_jumbo,
+									.fg = 0,
+								},
+							},
+						});
+
+						if (Clay_Hovered() && just_pressed) {
+							++counter;
+						}
+					}
+					filler(CLAY_ID_LOCAL("Filler4"));
 				}
 				CLAY(CLAY_ID("Body"), {
 					.layout = {
@@ -248,7 +342,10 @@ static void render_task(void* arg)
 								.text = "Hello world this text is long",
 								.max_width = TXT_SIZE_UNLIMITED,
 								.max_height = TXT_SIZE_UNLIMITED,
-								.style = TXT_STYLE_DEFAULT(fnt_label),
+								.style = {
+									.font = fnt_label,
+									.fg = 0,
+								},
 							},
 						});
 					}
@@ -291,16 +388,22 @@ static void render_task(void* arg)
 		hal_display_blit(HAL_BLIT_FAST);
 
 		// Drain the event queue
-		{
-			ui_msg_t msg;
+		bool first_message = true;
+		ui_msg_t msg;
+		just_pressed = false;
+		while (poll_message(&msg, &first_message)) {
+			if (msg.type == UI_TOUCH_EVENT) {
+				Clay_SetPointerState(
+					(Clay_Vector2){
+						.x = msg.touch.x,
+						.y = msg.touch.y,
+					},
+					msg.touch.type != HAL_TOUCH_UP
+				);
 
-			// Wait for first message indefinitely
-			xQueueReceive(ui_queue, &msg, portMAX_DELAY);
-			handle_ui_msg(&msg);
-
-			// Pull all messages with debouncing
-			while (xQueueReceive(ui_queue, &msg, portTICK_PERIOD_MS / 2) == pdPASS) {
-				handle_ui_msg(&msg);
+				if (msg.touch.type == HAL_TOUCH_DOWN) {
+					just_pressed = true;
+				}
 			}
 		}
 	}
