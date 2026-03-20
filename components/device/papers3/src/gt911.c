@@ -23,14 +23,43 @@ static const char *TAG = "gt911";
 static SemaphoreHandle_t  s_touch_sem = NULL;
 static gt911_touch_cb_t   s_touch_cb  = NULL;
 static void              *s_user_data = NULL;
+static const uint8_t GT911_ADDRS[] = { 0x14, 0x5D };
+static uint8_t s_addr = 0;
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
+
+static esp_err_t gt911_probe_address(void)
+{
+    for (int i = 0; i < sizeof(GT911_ADDRS); i++) {
+        uint8_t product_id[4] = {0};
+        uint16_t reg = REG_PRODUCT_ID;
+        uint8_t  addr_buf[2] = { reg >> 8, reg & 0xFF };
+
+        esp_err_t err = i2c_master_write_read_device(
+            PAPERS3_I2C_PORT, GT911_ADDRS[i],
+            addr_buf, sizeof(addr_buf),
+            product_id, sizeof(product_id),
+            pdMS_TO_TICKS(10));
+
+        if (err == ESP_OK &&
+            product_id[0] == '9' &&
+            product_id[1] == '1' &&
+            product_id[2] == '1') {
+            s_addr = GT911_ADDRS[i];
+            ESP_LOGI(TAG, "found at 0x%02X (product ID: %.4s)",
+                     s_addr, (char *)product_id);
+            return ESP_OK;
+        }
+    }
+    ESP_LOGE(TAG, "GT911 not found at 0x14 or 0x5D");
+    return ESP_ERR_NOT_FOUND;
+}
 
 static esp_err_t reg_read(uint16_t reg, uint8_t *out, size_t len)
 {
     uint8_t addr[2] = { reg >> 8, reg & 0xFF };
     return i2c_master_write_read_device(
-        PAPERS3_I2C_PORT, GT911_ADDR,
+        PAPERS3_I2C_PORT, s_addr,
         addr, sizeof(addr),
         out, len,
         pdMS_TO_TICKS(10)
@@ -41,41 +70,10 @@ static esp_err_t reg_write_byte(uint16_t reg, uint8_t value)
 {
     uint8_t buf[3] = { reg >> 8, reg & 0xFF, value };
     return i2c_master_write_to_device(
-        PAPERS3_I2C_PORT, GT911_ADDR,
+        PAPERS3_I2C_PORT, s_addr,
         buf, sizeof(buf),
         pdMS_TO_TICKS(10)
     );
-}
-
-/* ── Address latch sequence ──────────────────────────────────────── */
-
-static void gt911_latch_address(void)
-{
-    /* Drive INT low as output — this latches address 0x14 on reset */
-    gpio_config_t out_conf = {
-        .pin_bit_mask = (1ULL << GT911_INT_PIN),
-        .mode         = GPIO_MODE_OUTPUT,
-        .pull_up_en   = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type    = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&out_conf);
-    gpio_set_level(GT911_INT_PIN, 0);
-
-    /* Hold low long enough for the GT911 to sample it on power-up */
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    /* Switch INT back to input — device firmware boot takes ~50ms */
-    gpio_config_t in_conf = {
-        .pin_bit_mask = (1ULL << GT911_INT_PIN),
-        .mode         = GPIO_MODE_INPUT,
-        .pull_up_en   = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type    = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&in_conf);
-
-    vTaskDelay(pdMS_TO_TICKS(50));
 }
 
 /* ── ISR ─────────────────────────────────────────────────────────── */
@@ -107,27 +105,21 @@ esp_err_t gt911_init(gt911_touch_cb_t touch_cb, void *user_data)
     s_touch_cb  = touch_cb;
     s_user_data = user_data;
 
-    /* Latch I2C address before attempting any communication */
-    gt911_latch_address();
+    esp_err_t err = gt911_probe_address();
+    if (err != ESP_OK) return err;
 
-    /* Verify product ID */
-    uint8_t product_id[4] = {0};
-    esp_err_t err = reg_read(REG_PRODUCT_ID, product_id, sizeof(product_id));
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read product ID: %s", esp_err_to_name(err));
-        return err;
-    }
-    if (product_id[0] != '9' || product_id[1] != '1' || product_id[2] != '1') {
-        ESP_LOGE(TAG, "Unexpected product ID: %.4s", (char *)product_id);
-        return ESP_ERR_NOT_FOUND;
-    }
-    ESP_LOGI(TAG, "product ID: %.4s", (char *)product_id);
-
-    /* Binary semaphore — multiple ISR fires collapse into one read */
     s_touch_sem = xSemaphoreCreateBinary();
     if (s_touch_sem == NULL) return ESP_ERR_NO_MEM;
 
-    /* Install ISR on rising edge — INT goes high when data is ready */
+    gpio_config_t int_in = {
+        .pin_bit_mask = (1ULL << GT911_INT_PIN),
+        .mode         = GPIO_MODE_INPUT,
+        .pull_up_en   = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type    = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&int_in);
+
     gpio_install_isr_service(0);
     gpio_isr_handler_add(GT911_INT_PIN, gt911_isr_handler, NULL);
     gpio_set_intr_type(GT911_INT_PIN, GPIO_INTR_POSEDGE);
